@@ -14,4 +14,5 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	golang.org/x/text v0.20.0 // indirect
+	gorm.io/driver/mysql v1.5.7 // indirect
 )

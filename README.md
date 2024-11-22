@@ -21,8 +21,9 @@ Proyek ini adalah aplikasi sederhana yang menunjukkan bagaimana cara membuat ope
 ## Prasyarat
 Pastikan Anda memiliki perangkat lunak berikut:
 1. **Go** (minimal versi 1.18)
-2. **MySQL** (atau server MySQL lainnya)
-3. **Git** 
+2. **Gorm** (versi `v1.25.12`)
+3. **MySQL** (atau server MySQL lainnya)
+4. **Git** 
 
 ---
 
@@ -163,9 +164,9 @@ go-database-access/
 Gunakan alat seperti **Postman** atau **curl** untuk menguji endpoint. Contoh penggunaan `curl`:
 ```bash
 # Tambah album
-curl -X POST -H "Content-Type: application/json" \
--d '{"title":"Test Album", "artist":"Test Artist", "price":12.99}' \
-http://localhost:8080/albums
+curl -X POST http://localhost:8080/albums ^
+-H "Content-Type: application/json" ^
+-d "{\"title\": \"My Album\", \"artist\": \"John Doe\", \"price\": 99.99}"
 
 # Lihat semua album
 curl http://localhost:8080/albums
@@ -174,9 +175,9 @@ curl http://localhost:8080/albums
 curl http://localhost:8080/album?id=1
 
 # Perbarui album
-curl -X PUT -H "Content-Type: application/json" \
--d '{"title":"Updated Album", "artist":"Updated Artist", "price":20.00}' \
-http://localhost:8080/album?id=1
+curl -X PUT "http://localhost:8080/album?id=1" ^
+-H "Content-Type: application/json" ^
+-d "{\"title\": \"Updated Album\", \"artist\": \"Jane Doe\", \"price\": 4999.99}"
 
 # Hapus album
 curl -X DELETE http://localhost:8080/album?id=1

@@ -8,7 +8,6 @@ import (
 
 func main() {
 	db.InitDB()
-	defer db.DB.Close()
 
 	http.HandleFunc("/albums", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

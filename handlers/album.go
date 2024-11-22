@@ -1,30 +1,19 @@
 package handlers
 
 import (
-	"database/sql"
 	"db-album/db"
 	"db-album/models"
 	"encoding/json"
-	"fmt"
 	"net/http"
+
+	"gorm.io/gorm"
 )
 
 func GetAlbums(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.DB.Query("SELECT id, title, artist, price FROM album")
-	if err != nil {
+	var albums []models.Album
+	if err := db.DB.Find(&albums).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-	defer rows.Close()
-
-	var albums []models.Album
-	for rows.Next() {
-		var album models.Album
-		if err := rows.Scan(&album.ID, &album.Title, &album.Artist, &album.Price); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		albums = append(albums, album)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -39,10 +28,7 @@ func GetAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var album models.Album
-	err := db.DB.QueryRow("SELECT id, title, artist, price FROM album WHERE id = ?", id).Scan(
-		&album.ID, &album.Title, &album.Artist, &album.Price,
-	)
-	if err == sql.ErrNoRows {
+	if err := db.DB.First(&album, id).Error; err == gorm.ErrRecordNotFound {
 		http.Error(w, "Album not found", http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -61,16 +47,11 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := db.DB.Exec("INSERT INTO album (title, artist, price) VALUES (?, ?, ?)",
-		album.Title, album.Artist, album.Price,
-	)
-	if err != nil {
+	if err := db.DB.Create(&album).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	id, _ := res.LastInsertId()
-	album.ID = int(id)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(album)
 }
@@ -88,15 +69,22 @@ func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.DB.Exec("UPDATE album SET title = ?, artist = ?, price = ? WHERE id = ?",
-		album.Title, album.Artist, album.Price, id,
-	)
-	if err != nil {
+	var existing models.Album
+	if err := db.DB.First(&existing, id).Error; err == gorm.ErrRecordNotFound {
+		http.Error(w, "Album not found", http.StatusNotFound)
+		return
+	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, "Album with ID %s updated successfully", id)
+	if err := db.DB.Model(&existing).Updates(album).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(existing)
 }
 
 func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
@@ -106,11 +94,10 @@ func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.DB.Exec("DELETE FROM album WHERE id = ?", id)
-	if err != nil {
+	if err := db.DB.Delete(&models.Album{}, id).Error; err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, "Album with ID %s deleted successfully", id)
+	w.WriteHeader(http.StatusNoContent)
 }

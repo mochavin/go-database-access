@@ -1,26 +1,27 @@
 package db
 
 import (
-	"database/sql"
-	"fmt"
+	"db-album/models"
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-var DB *sql.DB
+var DB *gorm.DB
 
 func InitDB() {
+	dsn := "root:@tcp(127.0.0.1:3306)/albumdb?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
-	dsn := "root:@tcp(127.0.0.1:3306)/albumdb"
-	DB, err = sql.Open("mysql", dsn)
+	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	if err = DB.Ping(); err != nil {
-		log.Fatalf("Database unreachable: %v", err)
+	// Migrasi model
+	if err := DB.AutoMigrate(&models.Album{}); err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	fmt.Println("Database connected!")
+	log.Println("Database connected and migrated!")
 }
